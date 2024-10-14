@@ -207,7 +207,11 @@ for b =1:batch
     sorted_T = sort(T(:), 'descend');
 %     T(find(T<0))=0;
     count_T = length(find(sorted_T>0));
-    
+    if iter~=1
+        count_T_W = compute_weighted_slices(T);
+    else
+        count_T_W=1;
+    end
     weightTen = 1./ ((normalize_3D(abs(T))  +0.001).*priorWeight);% display_images(T)
 
     % updata N  
@@ -277,4 +281,24 @@ end
 %  subplot(1,3,3)
 %  r = tubalrank(X_3);
 % arank = averagerank(M_3)
+end
+
+function weighted_slices = compute_weighted_slices(data)
+    % 计算数据矩阵每个前切片的非零元素个数，并作为加权系数乘以每个前切片
+    [n1, n2, n3] = size(data);
+    % 初始化加权切片矩阵
+    weighted_slices = ones([n1, n2, n3]);
+    
+    % 遍历每个前切片
+    for i = 1:n3
+
+        % 计算当前切片非零元素个数
+        non_zero_count = length(find(data(:,:,i)>0));
+%         non_zero_count1 = nnz(data(:,:,i));
+        non_zero = non_zero_count/(n1*n2);
+%         count_T_W = 850*non_zero;
+        count_T_W = 1+tan(pi/2*non_zero);
+        % 将非零元素个数作为加权系数乘以当前切片，并加到加权切片矩阵中
+        weighted_slices(:, :, i) = count_T_W * weighted_slices(:,:,i);
+    end
 end
